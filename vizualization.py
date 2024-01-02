@@ -8,27 +8,22 @@ host = 'localhost'
 port = '5433'
 
 query_1 = '''
-SELECT Title.name
-FROM Title
-JOIN title_genre ON Title.name = title_genre.name
-JOIN Genre ON title_genre.genre_type = Genre.genre_type
-WHERE Genre.genre_type = 'romance' AND Title.title_type = 'MOVIE';
+SELECT genre_type, COUNT(name) AS film_count
+FROM title_genre
+GROUP BY genre_type;
 '''
 query_2 = '''
-SELECT t.name
-FROM Title t
-JOIN title_genre tg ON t.name = tg.name
-GROUP BY t.name
-HAVING COUNT(tg.genre_type) = 2;
+SELECT title_type, COUNT(name) AS film_count
+FROM Title
+GROUP BY title_type;
 
 '''
 
 query_3 = '''
-SELECT tg.genre_type, COUNT(tg.name) AS film_count
-FROM title_genre tg
-GROUP BY tg.genre_type
-ORDER BY film_count DESC
-FETCH FIRST 1 ROW ONLY;
+SELECT release_year, COUNT(name) AS film_count
+FROM Title
+GROUP BY release_year
+ORDER BY release_year;
 
 '''
 
@@ -40,51 +35,47 @@ with conn:
     cur = conn.cursor()
 
     cur.execute(query_1)
+    result_1 = cur.fetchall()
+    print('Результати запиту 1:')
+    for row in result_1:
+        print(row)
 
-    titles = []
 
-    for row in cur:
-        titles.append(row[0])
+    genres = [row[0] for row in result_1]
+    film_counts = [row[1] for row in result_1]
 
-    figure, bar_ax = plt.subplots()
-    bar = bar_ax.bar(titles, [1] * len(titles), label='Total', color='skyblue') 
-    bar_ax.bar_label(bar, label_type='center')
-
-    bar_ax.set_xlabel('Назви фільмів')
-    bar_ax.set_ylabel('Кількість')
-    bar_ax.set_title('Фільми у жанрі "romance" та типі "MOVIE"')
+    plt.bar(genres, film_counts, color='blue')
+    plt.title('Кількість фільмів кожного жанру')
+    plt.xlabel('Жанр')
+    plt.ylabel('Кількість фільмів')
+    plt.show()
 
     cur.execute(query_2)
+    result_2 = cur.fetchall()
+    print('\nРезультати запиту 2:')
+    for row in result_2:
+        print(row)
 
-    title_names = []
-    counts = []
+    title_types = [row[0] for row in result_2]
+    film_counts_by_title_type = [row[1] for row in result_2]
 
-    for row in cur:
-        title_names.append(row[0])
-        counts.append(1)  
-
-    figure, pie_ax = plt.subplots()
-    pie_ax.pie(counts, labels=title_names, autopct='%1.1f%%', startangle=90, counterclock=False)
-    pie_ax.set_title('Частка фільмів з двома жанрами')
+    plt.pie(film_counts_by_title_type, labels=title_types, autopct='%1.1f%%', startangle=90)
+    plt.title('Кількість фільмів за типом')
+    plt.axis('equal') 
+    plt.show()
 
     cur.execute(query_3)
+    result_3 = cur.fetchall()
+    print('\nРезультати запиту 3:')
+    for row in result_3:
+        print(row)
 
-    row = cur.fetchone()
+    years = [row[0] for row in result_3]
+    film_counts_by_year = [row[1] for row in result_3]
 
-    if row is not None:
-        genre = row[0]
-        film_count = row[1]
-
-    # Create a bar chart
-    figure, graph_ax = plt.subplots()
-    graph_ax.bar(genre, film_count, color='purple', alpha=0.7)
-
-    # Customize the plot
-    graph_ax.set_xlabel('Жанр')
-    graph_ax.set_ylabel('Кількість фільмів')
-    graph_ax.set_title(f'Графік для жанру з найбільшою кількістю фільмів: {genre}')
-
-mng = plt.get_current_fig_manager()
-mng.resize(1400, 600)
-
-plt.show()
+    plt.plot(years, film_counts_by_year, marker='o', linestyle='-', color='green')
+    plt.title('Залежність фільмів від року')
+    plt.xlabel('Рік')
+    plt.ylabel('Кількість фільмів')
+    plt.grid(True)
+    plt.show()
