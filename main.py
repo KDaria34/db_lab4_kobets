@@ -7,27 +7,22 @@ host = 'localhost'
 port = '5433'
 
 query_1 = '''
-SELECT Title.name
-FROM Title
-JOIN title_genre ON Title.name = title_genre.name
-JOIN Genre ON title_genre.genre_type = Genre.genre_type
-WHERE Genre.genre_type = 'romance' AND Title.title_type = 'MOVIE';
+SELECT genre_type, COUNT(name) AS film_count
+FROM title_genre
+GROUP BY genre_type;
 '''
 query_2 = '''
-SELECT t.name
-FROM Title t
-JOIN title_genre tg ON t.name = tg.name
-GROUP BY t.name
-HAVING COUNT(tg.genre_type) = 2;
+SELECT title_type, COUNT(name) AS film_count
+FROM Title
+GROUP BY title_type;
 
 '''
 
 query_3 = '''
-SELECT tg.genre_type, COUNT(tg.name) AS film_count
-FROM title_genre tg
-GROUP BY tg.genre_type
-ORDER BY film_count DESC
-FETCH FIRST 1 ROW ONLY;
+SELECT release_year, COUNT(name) AS film_count
+FROM Title
+GROUP BY release_year
+ORDER BY release_year;
 
 '''
 
@@ -39,19 +34,19 @@ with conn:
     print ("Database opened successfully")
     cur = conn.cursor()
 
-    print('1. Вивести усі фільми жанру романтика \n')
+    print('1. Виведення кількості фільмів кожного жанру:\n')
     cur.execute(query_1)
 
     for row in cur:
         print(row)
 
-    print('2. Вивести усі фільми з більш ніж одним жанром \n')
+    print('2. Виведення назв фільмів, які є типами "MOVIE": \n')
     cur.execute(query_2)
 
     for row in cur:
         print(row)
 
-    print('3. Вивести жанр з найбільшою кількістю фільмів  \n')
+    print('3. Виведення залежності фільмів від року:\n')
     cur.execute(query_3)
 
     for row in cur:
